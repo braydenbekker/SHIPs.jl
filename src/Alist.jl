@@ -2,7 +2,9 @@
 
 import Base: ==, convert, Dict
 
-const zklmTuple = NamedTuple{(:z, :k, :l, :m), Tuple{Int16, IntS, IntS, IntS}}
+const IntA = Int16
+const IntAA = Int32
+const zklmTuple = NamedTuple{(:z, :k, :l, :m), Tuple{Int16, IntA, IntA, IntA}}
 
 """
 `AList` : datastructure to help compute the A_zklm density projections
@@ -17,8 +19,8 @@ TODO: consider switching to Int8 and Int16 indexing
 """
 struct AList
    i2zklm::Vector{zklmTuple}
-   zklm2i::Dict{zklmTuple, IntS}
-   firstz::Vector{IntS}
+   zklm2i::Dict{zklmTuple, IntA}
+   firstz::Vector{IntA}
 end
 
 # --------------(de-)serialisation----------------------------------------
@@ -26,7 +28,7 @@ Dict(alist::AList) = Dict("__id__" => "PoSH_AList",
                            "i2zklm" => zklm2vec.(alist.i2zklm))
 AList(D::Dict) = AList(vec2zklm.(D["i2zklm"]))
 zklm2vec(t) = [t.z, t.k, t.l, t.m]
-vec2zklm(v) = (z=Int16(v[1]), k=IntS(v[2]), l=IntS(v[3]), m=IntS(v[4]))
+vec2zklm(v) = (z=Int16(v[1]), k=IntA(v[2]), l=IntA(v[3]), m=IntA(v[4]))
 ==(al1::AList, al2::AList) = (al1.i2zklm == al2.i2zklm)
 # ------------------------------------------------------------------------
 
@@ -40,9 +42,9 @@ function AList(zklmlist::AbstractVector{zklmTuple})
    # sort the tuples - by z, then k, then l, then m
    i2zklm = sort(zklmlist)
    # create the inverse mapping
-   zklm2i = Dict{zklmTuple, IntS}()
+   zklm2i = Dict{zklmTuple, IntA}()
    for i = 1:length(i2zklm)
-      zklm2i[i2zklm[i]] = IntS(i)
+      zklm2i[i2zklm[i]] = IntA(i)
    end
    # find the first index for each z
    zmax = maximum( a.z for a in i2zklm )
@@ -114,9 +116,9 @@ end
              z = zi. (they are sorted by z first)
 """
 mutable struct AAList
-   i2Aidx::Matrix{IntS}    # where in A can we find these
-   len::Vector{IntS}       # body-order
-   zklm2i::Dict{Any, IntS} # inverse mapping
+   i2Aidx::Matrix{IntA}    # where in A can we find these
+   len::Vector{Int8}       # body-order
+   zklm2i::Dict{Any, IntAA} # inverse mapping
 end
 
 # --------------(de-)serialisation----------------------------------------
@@ -131,9 +133,9 @@ function Dict(aalist::AAList)
 end
 zzkkllmm2vec(zzkkllmm) = Vector.([zzkkllmm...])
 vec2zzkkllmm(v) = (SVector(Int16.(v[1])...),
-                   SVector(IntS.(v[2])...),
-                   SVector(IntS.(v[3])...),
-                   SVector(IntS.(v[4])...))
+                   SVector(IntA.(v[2])...),
+                   SVector(IntA.(v[3])...),
+                   SVector(IntA.(v[4])...))
 AAList(D::Dict, alist) = AAList(vec2zzkkllmm.(D["ZKLM_list"]), alist)
 ==(aal1::AAList, aal2::AAList) = (aal1.i2Aidx == aal2.i2Aidx)
 # ------------------------------------------------------------------------
@@ -156,7 +158,7 @@ function AAList(ZKLM_list, alist)
    BO = maximum(ν -> length(ν[1]), ZKLM_list)  # body-order -> size of iAidx
 
    # create arrays to construct AAList
-   aalist = AAList(Matrix{IntS}(undef,0,BO), IntS[], Dict{Any, IntS}())
+   aalist = AAList(Matrix{IntA}(undef,0,BO), Int16[], Dict{Any, IntAA}())
 
    for (izz, kk, ll, mm) in ZKLM_list
       push!(aalist, (izz, kk, ll, mm), alist)
@@ -165,7 +167,8 @@ function AAList(ZKLM_list, alist)
 end
 
 function Base.push!(aalist::AAList, tpl, alist)
-   izz, kk, ll, mm = tpl
+   izz_, kk_, ll_, mm_ = tpl
+   izz, kk, ll, mm = Int16.(izz_), IntA.(kk_), IntA.(ll_), IntA.(mm_)
    BO = size(aalist.i2Aidx, 2)
    # store in the index of the current row in the reverse map
    idx = length(aalist) + 1
@@ -174,9 +177,9 @@ function Base.push!(aalist::AAList, tpl, alist)
    push!(aalist.len, length(ll))
 
    # fill the row of the i2Aidx matrix
-   newrow = IntS[]
+   newrow = IntA[]
    for α = 1:length(ll)
-      zklm = (z=izz[α], k=kk[α], l=ll[α], m=IntS(mm[α]))
+      zklm = (z=izz[α], k=kk[α], l=ll[α], m=mm[α])
       push!(newrow, alist[zklm])
    end
    # fill up the iAidx vector with zeros up to the body-order
@@ -263,9 +266,9 @@ function alists_from_bgrps(bgrps::Tuple)
    zklm_set = [ Set() for _=1:NZ ]
    for iz0 = 1:NZ
       for (izz, kk, ll) in bgrps[iz0], mm in _mrange(ll)
-         push!(zzkkllmm_list[iz0], (izz, kk, ll, IntS.(mm)))
+         push!(zzkkllmm_list[iz0], (Int16.(izz), IntA.(kk), IntA.(ll), IntA.(mm)))
          for α = 1:length(ll)
-            zklm = (z=izz[α], k=kk[α], l=ll[α], m=IntS(mm[α]))
+            zklm = (z=Int16(izz[α]), k=IntA(kk[α]), l=IntA(ll[α]), m=IntA(mm[α]))
             push!(zklm_set[iz0], zklm)
          end
       end

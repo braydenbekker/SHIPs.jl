@@ -18,3 +18,5 @@ function transform end
 function transform_d end
 function fcut end
 function fcut_d end
+
+function floattype end 

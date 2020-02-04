@@ -51,6 +51,8 @@ transform_d(t::PolyTransform, r::Number) = poly_trans_d(t.p, t.r0, r)
 
 inv_transform(t::PolyTransform, x::Number) = poly_trans_inv(t.p, t.r0, x)
 
+floattype(trans::PolyTransform, T) =
+   PolyTransform(trans.p, T(trans.r0))
 
 # """
 # Implements the distance transform
@@ -143,10 +145,10 @@ PolyCutoff2s(p, rl, ru)
 ```
 where `rl` is the inner cutoff and `ru` the outer cutoff.
 """
-struct PolyCutoff2s{P} <: PolyCutoff
+struct PolyCutoff2s{T, P} <: PolyCutoff
    valP::Val{P}
-   rl::Float64
-   ru::Float64
+   rl::T
+   ru::T
    PolyCutoff2s(valP::Val{P}, rl::Real, ru::Real) where {P} = (
          ((P isa Integer) && (P > 0))  ? new{P}(valP, Float64(rl), Float64(ru))
                                        : error("P must be a positive integer") )
@@ -165,6 +167,9 @@ fcut(C::PolyCutoff2s{P}, r::T, x) where {P, T} =
 fcut_d(C::PolyCutoff2s{P}, r::T, x) where {P, T} =
       C.rl < r < C.ru ? @fastmath( -2*P * x * (1 - x^2)^(P-1) ) : zero(T)
 
+function floattype(fcut::PolyCutoff2s, T) where CT <: PolyCutoff
+   return PolyCutoff2s(fcut.valP, T(fcut.rl), T(fcut.ru))
+end
 
 
 struct OneCutoff
@@ -198,6 +203,12 @@ end
 TransformedJacobi(J, trans, mult, rl, ru) =
    TransformedJacobi(J, trans, mult, rl, ru,
                      transform(trans, rl), transform(trans, ru) )
+
+floattype(J::TransformedJacobi, T) =
+   TransformedJacobi( floattype(J.J, T),
+                      floattype(J.trans, T),
+                      floattype(J.mult, T),
+                      T(J.rl), T(J.ru), T(J.tl), T(J.tu) )
 
 Dict(J::TransformedJacobi) = Dict(
       "__id__" => "PoSH_TransformedJacobi",

@@ -14,6 +14,7 @@ import JuLIP: evaluate,
               evaluate_d!
 
 import JuLIP.MLIPs: alloc_B, alloc_dB, IPBasis
+import PoSH: floattype
 
 import Base.==
 export Jacobi
@@ -60,6 +61,9 @@ end
 ==(J1::Jacobi, J2::Jacobi) = (
       (J1.α == J2.α) && (J1.β == J2.β) && (length(J1) == length(J2))
    )
+
+floattype(J::Jacobi, T) =
+   Jacobi{T}(T(J.α), T(J.β), T.(J.A), T.(J.B), T.(J.C), T.(J.nrm), J.skip0)
 
 
 function Jacobi(α, β, N, T=Float64; normalise=true, skip0=false)
