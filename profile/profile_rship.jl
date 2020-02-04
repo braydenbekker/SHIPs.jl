@@ -13,7 +13,8 @@ randcoeffs(B) = rand(length(B)) .* (1:length(B)).^(-2)
 
 trans = PolyTransform(3, 1.0)
 fcut = PolyCutoff2s(2, 0.5, 3.0)
-B = SHIPBasis(SparseSHIP(6, 12, wL=2.0), trans, fcut)
+B = SHIPBasis(SparseSHIP(6, 12, wL=2.0), trans, fcut
+   )
 coeffs = randcoeffs(B)
 ship = SHIP(B, coeffs)
 rship = RSHIP(ship.J, PoSH.SphericalHarmonics.RSHBasis(ship.SH.maxL), ship.zlist,

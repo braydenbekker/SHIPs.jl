@@ -130,9 +130,9 @@ convert(::Val{:PoSH_PolyCutoff1s}, D::Dict) = PolyCutoff1s(D)
 
 # what happened to @pure ??? => not exported anymore
 fcut(C::PolyCutoff1s{P}, r::T, x::T) where {P, T} =
-      r < C.ru ? @fastmath( (1 - x)^P ) : zero(T)
+      r < C.ru ? T(@fastmath( (1 - x)^P )) : zero(T)
 fcut_d(C::PolyCutoff1s{P}, r::T, x::T) where {P, T} =
-      r < C.ru ? @fastmath( - P * (1 - x)^(P-1) ) : zero(T)
+      r < C.ru ? T(@fastmath( - P * (1 - x)^(P-1) )) : zero(T)
 
 """
 Implements the two-sided cutoff
@@ -145,10 +145,10 @@ PolyCutoff2s(p, rl, ru)
 ```
 where `rl` is the inner cutoff and `ru` the outer cutoff.
 """
-struct PolyCutoff2s{T, P} <: PolyCutoff
+struct PolyCutoff2s{P} <: PolyCutoff
    valP::Val{P}
-   rl::T
-   ru::T
+   rl::Float64
+   ru::Float64
    PolyCutoff2s(valP::Val{P}, rl::Real, ru::Real) where {P} = (
          ((P isa Integer) && (P > 0))  ? new{P}(valP, Float64(rl), Float64(ru))
                                        : error("P must be a positive integer") )
@@ -163,14 +163,9 @@ PolyCutoff2s(D::Dict) = PolyCutoff2s(D["P"], D["rl"], D["ru"])
 convert(::Val{:PoSH_PolyCutoff2s}, D::Dict) = PolyCutoff2s(D)
 
 fcut(C::PolyCutoff2s{P}, r::T, x) where {P, T} =
-      C.rl < r < C.ru ? @fastmath( (1 - x^2)^P ) : zero(T)
+      C.rl < r < C.ru ? T(@fastmath( (1 - x^2)^P )) : zero(T)
 fcut_d(C::PolyCutoff2s{P}, r::T, x) where {P, T} =
-      C.rl < r < C.ru ? @fastmath( -2*P * x * (1 - x^2)^(P-1) ) : zero(T)
-
-function floattype(fcut::PolyCutoff2s, T) where CT <: PolyCutoff
-   return PolyCutoff2s(fcut.valP, T(fcut.rl), T(fcut.ru))
-end
-
+      C.rl < r < C.ru ? T(@fastmath( -2*P * x * (1 - x^2)^(P-1) )) : zero(T)
 
 struct OneCutoff
    rcut::Float64
@@ -207,7 +202,7 @@ TransformedJacobi(J, trans, mult, rl, ru) =
 floattype(J::TransformedJacobi, T) =
    TransformedJacobi( floattype(J.J, T),
                       floattype(J.trans, T),
-                      floattype(J.mult, T),
+                      J.mult,
                       T(J.rl), T(J.ru), T(J.tl), T(J.tu) )
 
 Dict(J::TransformedJacobi) = Dict(
