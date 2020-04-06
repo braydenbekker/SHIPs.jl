@@ -88,7 +88,7 @@ function SHIPBasis(spec::BasisSpec, J; T=Float64, kwargs...)
    bgrps = convert_basis_groups(NuZ, allKL) # zkl tuples
    # z-list to get i2z and z2i maps
    Zs = spec.Zs
-   @assert issorted(Zs)
+   #@assert issorted(Zs)
    zlist = ZList([Zs...]; static=true)
 
    return SHIPBasis(J, zlist, bgrps; T=T, Bcoefs=Bcoefs, kwargs...)
