@@ -56,7 +56,7 @@ Dict(pB::PolyPairBasis) = Dict(
       "zlist" => pB.zlist.list )
 
 PolyPairBasis(D::Dict) = PolyPairBasis( TransformedJacobi(D["J"]),
-                                        ZList(D["zlist"]; static=true) )
+                                        SZList(Dict("list" => D["zlist"])) )
 
 convert(::Val{:SHIPs_PolyPairBasis}, D::Dict) = PolyPairBasis(D)
 
